@@ -1,74 +1,43 @@
-# Welcome to your Lovable project
+# PIX Flow - Gestão de Pagamentos e Mídia
 
-## Project info
+O **PIX Flow** é uma solução completa para estabelecimentos e eventos que desejam profissionalizar o recebimento de pagamentos via PIX, unindo agilidade no caixa com entretenimento para o cliente.
 
-**URL**: https://lovable.dev/projects/c7f9eabf-34af-4c4d-90c5-55c142e3560b
+## 🎯 O que o sistema faz?
 
-## How can I edit this code?
+O sistema transforma o momento do pagamento em uma experiência interativa e organizada. Ele permite gerar cobranças PIX instantaneamente e exibir o QR Code em uma tela separada para o cliente, que, enquanto não está pagando, exibe anúncios, promoções ou vídeos institucionais.
 
-There are several ways of editing your application.
+É ideal para:
+- **Lojas e Comércios:** Agilize o caixa e divulgue promoções na tela do cliente.
+- **Lives e Eventos:** Receba doações ou pagamentos com confirmação visual na tela.
+- **Restaurantes e Bares:** Facilite o pagamento na mesa ou no balcão.
 
-**Use Lovable**
+## ✨ Principais Funcionalidades
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/c7f9eabf-34af-4c4d-90c5-55c142e3560b) and start prompting.
+### 💸 Geração Inteligente de Cobranças
+- **Calculadora Integrada:** Digite valores e faça contas simples (soma, multiplicação) diretamente no campo de valor (ex: `5 * 10` para cobrar 5 itens de 10 reais).
+- **QR Code Dinâmico:** Gera um código único para cada venda, garantindo segurança e rastreabilidade.
 
-Changes made via Lovable will be committed automatically to this repo.
+### 📺 Painel do Cliente (Segunda Tela)
+- **Mídia Rotativa:** Quando não há cobrança ativa, a tela do cliente exibe automaticamente uma playlist de imagens e vídeos (YouTube ou arquivos) configurada por você.
+- **Foco no Pagamento:** Assim que um PIX é gerado, a mídia é pausada e o QR Code de pagamento assume a tela com destaque total.
+- **Feedback Visual:** A tela confirma visualmente quando o pagamento é recebido.
 
-**Use your preferred IDE**
+### 📊 Controle e Gestão
+- **Histórico em Tempo Real:** Acompanhe todas as transações realizadas na sessão atual.
+- **Confirmação Instantânea:** O sistema avisa assim que o pagamento é confirmado, sem precisar conferir no aplicativo do banco a todo momento.
+- **Sessões Múltiplas:** Crie sessões diferentes para caixas diferentes ou eventos distintos.
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### 🎨 Personalização Total
+- **Identidade Visual:** Ajuste as cores do sistema para combinar com a sua marca.
+- **Temas:** Alterne entre modo claro e escuro conforme a iluminação do ambiente.
+- **Configuração Flexível:** Defina chaves PIX e playlists de anúncios de forma global (para todos os caixas) ou específica para cada sessão.
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## 🚀 Como usar
 
-Follow these steps:
+1.  **Inicie:** Abra o sistema e crie uma nova sessão (ou use a configuração global).
+2.  **Conecte a Tela:** Abra o link da sessão em um segundo monitor, tablet ou celular virado para o cliente.
+3.  **Cobre:** No seu painel, digite o valor e gere o PIX.
+4.  **Receba:** O cliente escaneia, paga, e o sistema confirma na hora.
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+Simples, rápido e profissional.
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
-
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/c7f9eabf-34af-4c4d-90c5-55c142e3560b) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
-# QR_code_biblioteca
