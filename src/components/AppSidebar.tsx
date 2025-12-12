@@ -1,7 +1,8 @@
-import { Home, History, Settings, Sun, Moon, LayoutDashboard } from "lucide-react";
+import { Home, History, Settings, Sun, Moon, LayoutDashboard, LogOut } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
-import { useLocation, useSearchParams } from "react-router-dom";
+import { useLocation, useSearchParams, useNavigate } from "react-router-dom";
 import { useTheme } from "@/providers/ThemeProvider";
+import { useAuth } from "@/providers/AuthProvider";
 import { Button } from "@/components/ui/button";
 
 import {
@@ -19,7 +20,9 @@ import {
 export function AppSidebar() {
   const location = useLocation();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
+  const { signOut } = useAuth();
   
   const isSessionRoute = location.pathname.startsWith('/session/');
   const sessionId = isSessionRoute ? location.pathname.split('/')[2] : null;
@@ -40,6 +43,11 @@ export function AppSidebar() {
 
   const toggleTheme = () => {
     setTheme(theme === "dark" ? "light" : "dark");
+  };
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate("/login");
   };
 
   return (
@@ -70,24 +78,35 @@ export function AppSidebar() {
       </SidebarContent>
       
       <SidebarFooter>
-        <Button
-          variant="ghost"
-          size="default"
-          onClick={toggleTheme}
-          className="w-full justify-start"
-        >
-          {theme === "dark" ? (
-            <>
-              <Sun className="h-4 w-4" />
-              <span className="ml-2">Tema Claro</span>
-            </>
-          ) : (
-            <>
-              <Moon className="h-4 w-4" />
-              <span className="ml-2">Tema Escuro</span>
-            </>
-          )}
-        </Button>
+        <div className="space-y-2">
+          <Button
+            variant="ghost"
+            size="default"
+            onClick={toggleTheme}
+            className="w-full justify-start"
+          >
+            {theme === "dark" ? (
+              <>
+                <Sun className="h-4 w-4" />
+                <span className="ml-2">Tema Claro</span>
+              </>
+            ) : (
+              <>
+                <Moon className="h-4 w-4" />
+                <span className="ml-2">Tema Escuro</span>
+              </>
+            )}
+          </Button>
+          <Button
+            variant="ghost"
+            size="default"
+            onClick={handleLogout}
+            className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10"
+          >
+            <LogOut className="h-4 w-4" />
+            <span className="ml-2">Sair</span>
+          </Button>
+        </div>
       </SidebarFooter>
     </Sidebar>
   );
