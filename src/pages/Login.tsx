@@ -56,7 +56,9 @@ export default function Login() {
         return;
       }
 
-      // Login bem-sucedido, redirecionar
+      // Login bem-sucedido, aguardar um pouco para estabilizar o estado
+      // antes de redirecionar (evita problemas de renderização)
+      await new Promise(resolve => setTimeout(resolve, 100));
       navigate(from, { replace: true });
     } catch (error) {
       console.error("Erro ao fazer login:", error);

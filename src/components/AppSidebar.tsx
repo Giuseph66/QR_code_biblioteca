@@ -46,8 +46,15 @@ export function AppSidebar() {
   };
 
   const handleLogout = async () => {
-    await signOut();
-    navigate("/login");
+    try {
+      await signOut();
+      // Usar replace para evitar problemas de navegação
+      navigate("/login", { replace: true });
+    } catch (error) {
+      console.error('Erro ao fazer logout:', error);
+      // Mesmo com erro, redirecionar para login
+      navigate("/login", { replace: true });
+    }
   };
 
   return (
