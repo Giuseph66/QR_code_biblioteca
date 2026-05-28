@@ -44,6 +44,10 @@ export default function Login() {
           errorMessage = "Email ou senha incorretos.";
         } else if (error.message.includes("Email not confirmed")) {
           errorMessage = "Por favor, confirme seu email antes de fazer login.";
+        } else if (error.message.includes("500") || error.message.includes("unexpected_failure") || error.message.includes("Erro interno do servidor")) {
+          errorMessage = "Erro interno do servidor. O banco de dados pode estar com problemas. Verifique o status do Supabase ou tente novamente em alguns instantes.";
+        } else if (error.message.includes("NetworkError") || error.message.includes("CORS") || error.message.includes("521")) {
+          errorMessage = "Não foi possível conectar ao servidor. Verifique se o projeto Supabase está ativo.";
         } else {
           errorMessage = error.message;
         }

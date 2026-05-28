@@ -5,6 +5,12 @@ import type { Database } from './types';
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
+// Validação das variáveis de ambiente
+if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
+  console.error('❌ Variáveis de ambiente do Supabase não configuradas!');
+  console.error('Verifique se VITE_SUPABASE_URL e VITE_SUPABASE_PUBLISHABLE_KEY estão definidas no arquivo .env');
+}
+
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
@@ -13,5 +19,31 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     storage: localStorage,
     persistSession: true,
     autoRefreshToken: true,
-  }
+    detectSessionInUrl: false,
+  },
+  global: {
+    // Timeout para evitar requisições infinitas
+    fetch: (url, options = {}) => {
+      // Adicionar timeout de 10 segundos
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      
+      return fetch(url, {
+        ...options,
+        signal: controller.signal,
+      }).finally(() => {
+        clearTimeout(timeoutId);
+      }).catch((error) => {
+        // Tratar erros de rede de forma mais amigável
+        if (error.name === 'AbortError') {
+          throw new Error('Tempo de requisição esgotado. Verifique sua conexão ou se o projeto Supabase está ativo.');
+        }
+        if (error.message?.includes('NetworkError') || error.message?.includes('CORS')) {
+          console.warn('⚠️ Erro de rede/CORS detectado. Verifique se o projeto Supabase está ativo e não pausado.');
+          throw new Error('Não foi possível conectar ao servidor. Verifique se o projeto Supabase está ativo.');
+        }
+        throw error;
+      });
+    },
+  },
 });

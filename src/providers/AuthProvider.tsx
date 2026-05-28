@@ -32,20 +32,55 @@ export function AuthProvider({ children, ...props }: AuthProviderProps) {
   useEffect(() => {
     let mounted = true;
 
-    // Verificar sessão existente
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (mounted) {
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
-      }
-    });
+    // Verificar sessão existente com tratamento de erro
+    supabase.auth.getSession()
+      .then(({ data: { session }, error }) => {
+        if (mounted) {
+          if (error) {
+            // Se houver erro de rede/CORS, apenas logar e continuar sem sessão
+            if (error.message?.includes('NetworkError') || 
+                error.message?.includes('CORS') || 
+                error.message?.includes('521')) {
+              console.warn('⚠️ Não foi possível verificar a sessão. O projeto Supabase pode estar pausado.');
+              // Limpar sessão local se houver erro de rede
+              setSession(null);
+              setUser(null);
+            } else {
+              console.error('Erro ao verificar sessão:', error);
+            }
+          } else {
+            setSession(session);
+            setUser(session?.user ?? null);
+          }
+          setLoading(false);
+        }
+      })
+      .catch((error) => {
+        if (mounted) {
+          // Tratar erros de rede sem quebrar a aplicação
+          if (error.message?.includes('NetworkError') || 
+              error.message?.includes('CORS') || 
+              error.message?.includes('521')) {
+            console.warn('⚠️ Erro de rede ao verificar sessão. O projeto Supabase pode estar pausado.');
+          } else {
+            console.error('Erro inesperado ao verificar sessão:', error);
+          }
+          setSession(null);
+          setUser(null);
+          setLoading(false);
+        }
+      });
 
     // Ouvir mudanças no estado de autenticação
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       if (mounted) {
+        // Ignorar eventos de erro de refresh token quando o servidor está indisponível
+        if (event === 'TOKEN_REFRESHED' && !session) {
+          // Se o refresh falhou, não atualizar o estado (manter sessão local se existir)
+          return;
+        }
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
@@ -66,7 +101,22 @@ export function AuthProvider({ children, ...props }: AuthProviderProps) {
       });
 
       if (error) {
-        return { error };
+        // Melhorar mensagens de erro específicas
+        let errorMessage = error.message;
+        
+        // Tratar erros 500 do servidor
+        if (error.message?.includes('500') || error.message?.includes('unexpected_failure')) {
+          errorMessage = 'Erro interno do servidor. O banco de dados pode estar com problemas. Tente novamente em alguns instantes ou verifique o status do Supabase.';
+        }
+        
+        // Tratar erros de rede
+        if (error.message?.includes('NetworkError') || error.message?.includes('CORS') || error.message?.includes('521')) {
+          errorMessage = 'Não foi possível conectar ao servidor. Verifique se o projeto Supabase está ativo e não pausado.';
+        }
+        
+        return { 
+          error: new Error(errorMessage) 
+        };
       }
 
       // Aguardar um pouco antes de atualizar o estado para evitar race conditions
@@ -77,7 +127,12 @@ export function AuthProvider({ children, ...props }: AuthProviderProps) {
       setUser(data.user);
       return { error: null };
     } catch (error) {
-      return { error: error as Error };
+      // Tratar erros inesperados
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : 'Erro inesperado ao fazer login. Tente novamente.';
+      
+      return { error: new Error(errorMessage) };
     }
   };
 
