@@ -1,10 +1,11 @@
 import { QRCodeSVG } from 'qrcode.react';
 import { Button } from '@/components/ui/button';
-import { Copy, Check, Sun, Moon, Maximize, Minimize } from 'lucide-react';
+import { Copy, Check, Sun, Moon, Maximize, Minimize, LightbulbOff } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { formatCurrency } from '@/utils/pixGenerator';
 import { useTheme } from '@/providers/ThemeProvider';
+import { useWakeLock } from '@/hooks/useWakeLock';
 import { YouTubeEmbed } from '@/components/YouTubeEmbed';
 import { AdItem, extractYouTubeVideoId } from '@/types/ads';
 
@@ -20,6 +21,7 @@ export function PIXMobileDisplay({ sessionId, currentPix }: PIXMobileDisplayProp
   const [restMode, setRestMode] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const { theme, setTheme } = useTheme();
+  const { status: wakeLockStatus, request: requestWakeLock } = useWakeLock();
 
   useEffect(() => {
     loadAds();
@@ -245,6 +247,23 @@ export function PIXMobileDisplay({ sessionId, currentPix }: PIXMobileDisplayProp
 
   const TopButtons = () => (
     <div className="absolute top-4 right-4 flex gap-2 z-10">
+      {wakeLockStatus !== 'active' && (
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={requestWakeLock}
+          disabled={wakeLockStatus === 'unsupported'}
+          title={
+            wakeLockStatus === 'unsupported'
+              ? 'Este navegador não permite manter a tela acesa'
+              : 'A tela pode apagar. Toque para mantê-la acesa'
+          }
+          aria-label="Manter tela acesa"
+          className="bg-background/80 backdrop-blur-sm"
+        >
+          <LightbulbOff className="h-5 w-5" />
+        </Button>
+      )}
       <Button
         variant="outline"
         size="icon"
