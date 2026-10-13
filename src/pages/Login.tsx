@@ -1,4 +1,4 @@
-import { useState, FormEvent } from "react";
+import { useEffect, useRef, useState, FormEvent } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,8 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { signIn } = useAuth();
+  const submittingRef = useRef(false);
+  const { signIn, user, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
@@ -20,8 +21,16 @@ export default function Login() {
   // Pegar a URL de destino se houver (redirect após login)
   const from = (location.state as { from?: { pathname: string } })?.from?.pathname || "/";
 
+  useEffect(() => {
+    if (!loading && user) {
+      navigate(from, { replace: true });
+    }
+  }, [loading, user, navigate, from]);
+
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    if (submittingRef.current || loading) return;
 
     if (!email.trim() || !password.trim()) {
       toast({
@@ -32,6 +41,7 @@ export default function Login() {
       return;
     }
 
+    submittingRef.current = true;
     setIsLoading(true);
 
     try {
@@ -59,11 +69,6 @@ export default function Login() {
         });
         return;
       }
-
-      // Login bem-sucedido, aguardar um pouco para estabilizar o estado
-      // antes de redirecionar (evita problemas de renderização)
-      await new Promise(resolve => setTimeout(resolve, 100));
-      navigate(from, { replace: true });
     } catch (error) {
       console.error("Erro ao fazer login:", error);
       toast({
@@ -72,6 +77,7 @@ export default function Login() {
         variant: "destructive",
       });
     } finally {
+      submittingRef.current = false;
       setIsLoading(false);
     }
   };
@@ -127,7 +133,7 @@ export default function Login() {
 
             <Button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || loading}
               className="w-full bg-gradient-primary hover:opacity-90 transition-opacity"
               size="lg"
             >

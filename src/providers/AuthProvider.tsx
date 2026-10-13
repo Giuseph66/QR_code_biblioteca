@@ -96,7 +96,7 @@ export function AuthProvider({ children, ...props }: AuthProviderProps) {
   const signIn = async (email: string, password: string) => {
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
+        email: email.trim(),
         password,
       });
 
@@ -119,10 +119,6 @@ export function AuthProvider({ children, ...props }: AuthProviderProps) {
         };
       }
 
-      // Aguardar um pouco antes de atualizar o estado para evitar race conditions
-      // Isso permite que o onAuthStateChange processe primeiro
-      await new Promise(resolve => setTimeout(resolve, 50));
-      
       setSession(data.session);
       setUser(data.user);
       return { error: null };
