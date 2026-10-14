@@ -1,13 +1,14 @@
 import { QRCodeSVG } from 'qrcode.react';
 import { Button } from '@/components/ui/button';
-import { Copy, Check, Sun, Moon, Maximize, Minimize, LightbulbOff } from 'lucide-react';
-import { useState, useEffect, useCallback } from 'react';
+import { Copy, Check, Sun, Moon, Maximize, Minimize, LightbulbOff, RefreshCw } from 'lucide-react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { formatCurrency } from '@/utils/pixGenerator';
 import { useTheme } from '@/providers/ThemeProvider';
 import { useWakeLock } from '@/hooks/useWakeLock';
 import { YouTubeEmbed } from '@/components/YouTubeEmbed';
 import { AdItem, extractYouTubeVideoId } from '@/types/ads';
+import { toast } from '@/hooks/use-toast';
 
 interface PIXMobileDisplayProps {
   sessionId: string;
@@ -20,6 +21,8 @@ export function PIXMobileDisplay({ sessionId, currentPix }: PIXMobileDisplayProp
   const [currentAdIndex, setCurrentAdIndex] = useState(0);
   const [restMode, setRestMode] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const refreshingRef = useRef(false);
   const { theme, setTheme } = useTheme();
   const { status: wakeLockStatus, request: requestWakeLock } = useWakeLock();
 
@@ -84,24 +87,28 @@ export function PIXMobileDisplay({ sessionId, currentPix }: PIXMobileDisplayProp
       // First try to get ads_config for this session
       let adsConfigId: string | null = null;
 
-      const { data: sessionConfig } = await supabase
+      const { data: sessionConfig, error: sessionError } = await supabase
         .from('ads_config')
         .select('id, ads')
         .eq('session_id', sessionId)
         .maybeSingle();
 
+      if (sessionError) throw sessionError;
+
       if (sessionConfig) {
         adsConfigId = sessionConfig.id;
         // Check if there are ad_items for this config
-        const { data: items } = await supabase
+        const { data: items, error: itemsError } = await supabase
           .from('ad_items')
           .select('*')
           .eq('ads_config_id', adsConfigId)
           .order('sort_order');
 
+        if (itemsError) throw itemsError;
+
         if (items && items.length > 0) {
           setAdItems(items as AdItem[]);
-          return;
+          return true;
         }
 
         // Fallback to legacy ads array
@@ -114,28 +121,32 @@ export function PIXMobileDisplay({ sessionId, currentPix }: PIXMobileDisplayProp
             sort_order: i,
           }));
           setAdItems(legacyAds);
-          return;
+          return true;
         }
       }
 
       // Try global config
-      const { data: globalConfig } = await supabase
+      const { data: globalConfig, error: globalError } = await supabase
         .from('ads_config')
         .select('id, ads')
         .is('session_id', null)
         .maybeSingle();
 
+      if (globalError) throw globalError;
+
       if (globalConfig) {
         adsConfigId = globalConfig.id;
-        const { data: items } = await supabase
+        const { data: items, error: itemsError } = await supabase
           .from('ad_items')
           .select('*')
           .eq('ads_config_id', adsConfigId)
           .order('sort_order');
 
+        if (itemsError) throw itemsError;
+
         if (items && items.length > 0) {
           setAdItems(items as AdItem[]);
-          return;
+          return true;
         }
 
         // Fallback to legacy ads array
@@ -148,10 +159,14 @@ export function PIXMobileDisplay({ sessionId, currentPix }: PIXMobileDisplayProp
             sort_order: i,
           }));
           setAdItems(legacyAds);
+          return true;
         }
       }
+      setAdItems([]);
+      return true;
     } catch (error) {
       console.error('Error loading ads:', error);
+      return false;
     }
   };
 
@@ -163,17 +178,38 @@ export function PIXMobileDisplay({ sessionId, currentPix }: PIXMobileDisplayProp
 
   const loadRestMode = async () => {
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('sessions')
         .select('rest_mode')
         .eq('id', sessionId)
         .single();
 
+      if (error) throw error;
       if (data) {
         setRestMode(data.rest_mode || false);
       }
+      return true;
     } catch (error) {
       console.error('Error loading rest mode:', error);
+      return false;
+    }
+  };
+
+  const handleRefresh = async () => {
+    if (refreshingRef.current) return;
+    refreshingRef.current = true;
+    setIsRefreshing(true);
+    setCurrentAdIndex(0);
+    try {
+      const results = await Promise.all([loadAds(), loadRestMode()]);
+      if (results.some(result => !result)) throw new Error('Falha ao atualizar painel');
+      if (!supabase.realtime.isConnected()) supabase.realtime.connect();
+      toast({ title: 'Painel atualizado', description: 'Anúncios e modo descanso recarregados.' });
+    } catch {
+      toast({ title: 'Não foi possível atualizar', description: 'Verifique sua conexão e tente novamente.', variant: 'destructive' });
+    } finally {
+      refreshingRef.current = false;
+      setIsRefreshing(false);
     }
   };
 
@@ -247,6 +283,18 @@ export function PIXMobileDisplay({ sessionId, currentPix }: PIXMobileDisplayProp
 
   const TopButtons = () => (
     <div className="absolute top-4 right-4 flex gap-2 z-10">
+      <Button
+        variant="outline"
+        size="icon"
+        onClick={handleRefresh}
+        disabled={isRefreshing}
+        aria-label={isRefreshing ? 'Atualizando painel' : 'Atualizar painel'}
+        title="Atualizar painel"
+        aria-busy={isRefreshing}
+        className="bg-background/80 backdrop-blur-sm"
+      >
+        <RefreshCw className={`h-5 w-5 ${isRefreshing ? 'animate-spin' : ''}`} />
+      </Button>
       {wakeLockStatus !== 'active' && (
         <Button
           variant="outline"

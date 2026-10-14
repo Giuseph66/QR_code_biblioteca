@@ -10,7 +10,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
-import { ArrowLeft, Trash2, Settings, CheckCircle, Moon } from "lucide-react";
+import { ArrowLeft, Trash2, Settings, CheckCircle, Moon, RefreshCw } from "lucide-react";
 import { generatePixPayload } from "@/utils/pixGenerator";
 import { getSessionUrl } from "@/utils/sessionGenerator";
 import { getPixConfig } from "@/utils/configHelper";
@@ -37,6 +37,8 @@ export default function Session() {
   } | null>(null);
   const [transactions, setTransactions] = useState<PIXTransaction[]>([]);
   const [restMode, setRestMode] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const refreshingRef = useRef(false);
   const channelRef = useRef<RealtimeChannel | null>(null);
   useEffect(() => {
     if (!sessionId) {
@@ -103,8 +105,10 @@ export default function Session() {
 
       if (error) throw error;
       setTransactions(data || []);
+      return true;
     } catch (error) {
       console.error("Error loading transactions:", error);
+      return false;
     }
   };
 
@@ -112,17 +116,37 @@ export default function Session() {
     if (!sessionId) return;
     
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("sessions")
         .select("rest_mode")
         .eq("id", sessionId)
         .single();
       
+      if (error) throw error;
       if (data) {
         setRestMode(data.rest_mode || false);
       }
+      return true;
     } catch (error) {
       console.error("Error loading rest mode:", error);
+      return false;
+    }
+  };
+
+  const handleRefresh = async () => {
+    if (!sessionId || refreshingRef.current) return;
+    refreshingRef.current = true;
+    setIsRefreshing(true);
+    try {
+      const results = await Promise.all([loadTransactions(), loadRestMode()]);
+      if (results.some(result => !result)) throw new Error("Falha ao atualizar sessão");
+      if (!supabase.realtime.isConnected()) supabase.realtime.connect();
+      toast({ title: "Sessão atualizada", description: "Histórico e modo descanso recarregados." });
+    } catch {
+      toast({ title: "Não foi possível atualizar", description: "Verifique sua conexão e tente novamente.", variant: "destructive" });
+    } finally {
+      refreshingRef.current = false;
+      setIsRefreshing(false);
     }
   };
 
@@ -316,6 +340,17 @@ export default function Session() {
                   Sessão: {sessionId}
                 </p>
               </div>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={handleRefresh}
+                disabled={isRefreshing}
+                aria-label={isRefreshing ? "Atualizando sessão" : "Atualizar sessão"}
+                title="Atualizar sessão"
+                aria-busy={isRefreshing}
+              >
+                <RefreshCw className={`h-5 w-5 ${isRefreshing ? "animate-spin" : ""}`} />
+              </Button>
               <Button
                 variant={restMode ? "default" : "outline"}
                 size="icon"
